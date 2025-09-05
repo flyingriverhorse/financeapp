@@ -1,0 +1,2104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Check for saved dark mode preference or system preference
+        if (localStorage.getItem('darkMode') === 'true' || 
+            (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+    <style>
+        /* Dark mode styles */
+        .dark {
+            color-scheme: dark;
+        }
+        
+        .dark body {
+            background: linear-gradient(to bottom right, #1a1a2e, #16213e);
+            color: #e5e7eb;
+        }
+        
+        .dark .glass-effect {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .dark .bg-white {
+            background-color: rgba(30, 41, 59, 0.95);
+        }
+        
+        .dark .text-gray-600 {
+            color: #cbd5e1;
+        }
+        
+        .dark .text-gray-500 {
+            color: #94a3b8;
+        }
+        
+        .dark .border-gray-300 {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .dark input, 
+        .dark select, 
+        .dark textarea {
+            background-color: rgba(15, 23, 42, 0.8);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
+        }
+        
+        .dark .bg-gray-50 {
+            background-color: rgba(15, 23, 42, 0.5);
+        }
+
+        /* Mobile responsiveness improvements */
+        @media (max-width: 640px) {
+            .grid {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .md\:grid-cols-5 {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            
+            .md\:grid-cols-4 {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            
+            .flex-col-mobile {
+                flex-direction: column;
+            }
+            
+            .w-full-mobile {
+                width: 100% !important;
+            }
+            
+            .p-4-mobile {
+                padding: 1rem !important;
+            }
+            
+            .text-sm-mobile {
+                font-size: 0.875rem !important;
+            }
+        }
+
+        .modal {
+            backdrop-filter: blur(4px);
+            display: flex;
+        }
+        
+        .tab-content {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-reset:hover {
+            background: linear-gradient(135deg, #ea580c, #c2410c);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+        }
+
+        .error-message {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+        }
+        
+        .success-message {
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div id="app" class="p-6">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <header class="text-center mb-8">
+                <div class="flex justify-end mb-4">
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        <i data-lucide="moon" class="dark:hidden" size="20"></i>
+                        <i data-lucide="sun" class="hidden dark:block" size="20"></i>
+                    </button>
+                </div>
+                <h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-2">Personal Finance Tracker</h1>
+                <p class="text-gray-600 dark:text-gray-300">Take control of your money and build better financial habits</p>
+                
+                <!-- Member Selector -->
+                <div id="memberSelector" class="mt-4 flex justify-center">
+                    <div class="flex items-center gap-2 bg-white rounded-lg p-2 shadow-md glass-effect">
+                        <span class="text-sm text-gray-600">Viewing:</span>
+                        <select id="activeMemberSelect" class="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </select>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover glass-effect">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Income</p>
+                            <p id="totalIncomeCard" class="text-2xl font-bold text-green-600">$0.00</p>
+                            <p class="text-xs text-gray-400 mt-1">From transactions</p>
+                        </div>
+                        <i data-lucide="trending-up" class="text-green-500" size="32"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover glass-effect">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Expenses</p>
+                            <p id="totalExpensesCard" class="text-2xl font-bold text-red-600">$0.00</p>
+                            <p id="expensePercentage" class="text-xs text-gray-400 mt-1">0% of income</p>
+                        </div>
+                        <i data-lucide="trending-down" class="text-red-500" size="32"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover glass-effect">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Net Income</p>
+                            <p id="netIncomeCard" class="text-2xl font-bold text-green-600">$0.00</p>
+                            <p class="text-xs text-gray-400 mt-1">Available to save</p>
+                        </div>
+                        <i data-lucide="dollar-sign" class="text-green-500" size="32"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover glass-effect">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Savings Rate</p>
+                            <p id="savingsRateCard" class="text-2xl font-bold text-blue-600">0%</p>
+                            <p class="text-xs text-gray-400 mt-1">Target: 20%</p>
+                        </div>
+                        <i data-lucide="target" class="text-blue-500" size="32"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover glass-effect">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Savings Goal</p>
+                            <p id="savingsGoalProgressCard" class="text-2xl font-bold text-purple-600">0%</p>
+                            <p id="savingsGoalTarget" class="text-xs text-gray-400 mt-1">$0 target</p>
+                        </div>
+                        <i data-lucide="target" class="text-purple-500" size="32"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="bg-white rounded-xl shadow-lg mb-8 glass-effect">
+                <div class="flex border-b overflow-x-auto">
+                    <button onclick="setActiveTab('overview', event)" class="tab-btn px-6 py-3 font-medium border-b-2 border-blue-500 text-blue-600 whitespace-nowrap" data-tab="overview">
+                        Overview
+                    </button>
+                    <button onclick="setActiveTab('transactions', event)" class="tab-btn px-6 py-3 font-medium text-gray-500 whitespace-nowrap" data-tab="transactions">
+                        Transactions
+                    </button>
+                    <button onclick="setActiveTab('budget', event)" class="tab-btn px-6 py-3 font-medium text-gray-500 whitespace-nowrap" data-tab="budget">
+                        Budget
+                    </button>
+                    <button onclick="setActiveTab('analytics', event)" class="tab-btn px-6 py-3 font-medium text-gray-500 whitespace-nowrap" data-tab="analytics">
+                        Analytics
+                    </button>
+                    <button onclick="setActiveTab('members', event)" class="tab-btn px-6 py-3 font-medium text-gray-500 whitespace-nowrap" data-tab="members">
+                        Members
+                    </button>
+                    <button onclick="setActiveTab('household', event)" class="tab-btn px-6 py-3 font-medium text-gray-500 whitespace-nowrap" data-tab="household">
+                        Household View
+                    </button>
+                    <button onclick="exportToCSV()" class="ml-auto px-6 py-3 bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2 btn-primary whitespace-nowrap">
+                        <i data-lucide="download" size="18"></i>
+                        Export CSV
+                    </button>
+                    <button onclick="resetApplication()" class="px-6 py-3 bg-orange-600 text-white hover:bg-orange-700 transition-colors flex items-center gap-2 btn-reset whitespace-nowrap rounded-tr-xl">
+                        <i data-lucide="refresh-cw" size="18"></i>
+                        Reset All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tabContent">
+                <!-- Overview Tab -->
+                <div id="overviewTab" class="tab-content">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Add Transaction -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                                <i data-lucide="plus-circle" class="text-blue-500" size="24"></i>
+                                Add Transaction
+                            </h2>
+                            
+                            <div class="space-y-4">
+                                <input
+                                    type="text"
+                                    id="transactionDescription"
+                                    placeholder="Description (e.g., Salary, Lunch at restaurant)"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                />
+                                
+                                <input
+                                    type="number"
+                                    id="transactionAmount"
+                                    step="0.01"
+                                    placeholder="Amount"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                />
+                                
+                                <select id="transactionCategory" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                    <option value="Food and Dining">Food and Dining</option>
+                                    <option value="Transportation">Transportation</option>
+                                    <option value="Entertainment">Entertainment</option>
+                                    <option value="Utilities">Utilities</option>
+                                    <option value="Shopping">Shopping</option>
+                                    <option value="Healthcare">Healthcare</option>
+                                    <option value="Housing">Housing</option>
+                                    <option value="Savings and Investment">Savings and Investment</option>
+                                </select>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <select id="transactionType" class="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                        <option value="expense">Expense</option>
+                                        <option value="income">Income</option>
+                                    </select>
+                                    
+                                    <select id="transactionPaymentMethod" class="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                        <option value="credit_card">Credit Card</option>
+                                        <option value="debit_card">Debit Card</option>
+                                        <option value="cash">Cash</option>
+                                        <option value="bank_transfer">Bank Transfer</option>
+                                        <option value="digital_wallet">Digital Wallet</option>
+                                    </select>
+                                </div>
+                                
+                                <input
+                                    type="date"
+                                    id="transactionDate"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                />
+                                
+                                <input
+                                    type="text"
+                                    id="transactionTags"
+                                    placeholder="Tags (comma separated, e.g., recurring, work, personal)"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                />
+                                
+                                <textarea
+                                    id="transactionNotes"
+                                    placeholder="Notes (optional)"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-20 transition-all"
+                                ></textarea>
+                                
+                                <button onclick="addTransaction()" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold btn-primary">
+                                    Add Transaction
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Stats -->
+                        <div class="space-y-6">
+                            <div class="bg-white rounded-xl shadow-lg p-4 glass-effect text-sm text-gray-600">
+                                💡 <strong>New Income System:</strong> Add income by creating "Income" transactions. This tracks actual income received (salary, freelance, bonuses) rather than fixed monthly amounts.
+                            </div>
+
+                            <!-- Payment Methods -->
+                            <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                                <h3 class="text-lg font-bold mb-3">Spending by Payment Method</h3>
+                                <div id="paymentMethods" class="space-y-2">
+                                    <p class="text-gray-500 text-center">No payment data yet</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transactions Tab -->
+                <div id="transactionsTab" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="calendar" class="text-purple-500" size="24"></i>
+                            Transaction History
+                        </h2>
+                        
+                        <div class="flex flex-col md:flex-row gap-4 mb-6">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="search" size="20" class="text-gray-400"></i>
+                                <input
+                                    type="text"
+                                    id="searchInput"
+                                    placeholder="Search transactions..."
+                                    onkeyup="filterTransactions()"
+                                    class="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                />
+                            </div>
+                            
+                            <select id="categoryFilter" onchange="filterTransactions()" class="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                <option value="all">All Categories</option>
+                                <option value="Food and Dining">Food and Dining</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Utilities">Utilities</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Healthcare">Healthcare</option>
+                                <option value="Housing">Housing</option>
+                                <option value="Savings and Investment">Savings and Investment</option>
+                            </select>
+                            
+                            <select id="dateFilter" onchange="filterTransactions()" class="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                <option value="all">All Time</option>
+                                <option value="week">Last Week</option>
+                                <option value="month">This Month</option>
+                                <option value="3months">Last 3 Months</option>
+                            </select>
+                        </div>
+                        
+                        <div id="transactionsList" class="space-y-3 max-h-96 overflow-y-auto custom-scroll">
+                            <p class="text-gray-500 text-center py-8">No transactions found.</p>
+                        </div>
+                        
+                        <div id="transactionsSummary" class="mt-4 flex justify-between items-center text-sm text-gray-600">
+                            <span>Showing 0 of 0 transactions</span>
+                            <span>Total: $0.00 income, $0.00 expenses</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget Tab -->
+                <div id="budgetTab" class="tab-content hidden">
+                    <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="pie-chart" class="text-green-500" size="24"></i>
+                            Budget Management
+                        </h2>
+                        
+                        <div id="budgetCategories" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Budget categories will be populated here -->
+                        </div>
+                        
+                        <div class="mt-8 p-6 bg-gray-50 rounded-lg">
+                            <h3 class="text-lg font-semibold mb-4">Budget Summary</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="text-center">
+                                    <p class="text-sm text-gray-600">Total Budget</p>
+                                    <p id="totalBudgetSummary" class="text-2xl font-bold text-blue-600">$3300.00</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-sm text-gray-600">Total Spent</p>
+                                    <p id="totalSpentSummary" class="text-2xl font-bold text-red-600">$0.00</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-sm text-gray-600">Remaining</p>
+                                    <p id="totalRemainingSummary" class="text-2xl font-bold text-green-600">$3300.00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div id="analyticsTab" class="tab-content hidden">
+                    <div class="space-y-8">
+                        <!-- Monthly Trend -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                                <i data-lucide="bar-chart-3" class="text-blue-500" size="24"></i>
+                                Monthly Trend (Last 6 Months)
+                            </h2>
+                            
+                            <div class="relative w-full h-[300px]">
+                                <canvas id="monthlyTrendChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Income vs Expenses -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                                <i data-lucide="pie-chart" class="text-purple-500" size="24"></i>
+                                Income vs Expenses
+                            </h2>
+                            
+                            <div class="relative w-full h-[300px]">
+                                <canvas id="incomeExpensesChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Category Breakdown -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                                <i data-lucide="doughnut" class="text-green-500" size="24"></i>
+                                Spending by Category
+                            </h2>
+                            
+                            <div class="relative w-full h-[300px]">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Savings Trend -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                                <i data-lucide="trending-up" class="text-blue-500" size="24"></i>
+                                Savings Progress
+                            </h2>
+                            
+                            <div class="relative w-full h-[300px]">
+                                <canvas id="savingsTrendChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Financial Health Score -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                            <h2 class="text-xl font-bold mb-4">Financial Health Score</h2>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <span>Savings Rate</span>
+                                        <span id="healthSavingsRate" class="font-semibold text-green-600">0%</span>
+                                    </div>
+                                    
+                                    <div class="flex justify-between items-center">
+                                        <span>Budget Adherence</span>
+                                        <span id="healthBudgetAdherence" class="font-semibold text-green-600">On Track</span>
+                                    </div>
+                                    
+                                    <div class="flex justify-between items-center">
+                                        <span>Expense Ratio</span>
+                                        <span id="healthExpenseRatio" class="font-semibold text-green-600">0%</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-3">
+                                    <h3 class="font-semibold">Recommendations</h3>
+                                    <ul id="healthRecommendations" class="text-sm space-y-2 text-gray-600">
+                                        <!-- Recommendations will be populated here -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Members Tab -->
+                <div id="membersTab" class="tab-content hidden">
+                    <div class="space-y-8">
+                        <!-- Add New Member -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                                <i data-lucide="plus-circle" class="text-blue-500" size="24"></i>
+                                Add Household Member
+                            </h2>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <input
+                                    type="text"
+                                    id="newMemberName"
+                                    placeholder="Member name"
+                                    class="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                />
+                                <input
+                                    type="number"
+                                    id="newMemberSavings"
+                                    placeholder="Savings goal"
+                                    class="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                />
+                                <button onclick="addMember()" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold btn-primary">
+                                    Add Member
+                                </button>
+                            </div>
+                            
+                            <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                                <h4 class="font-semibold text-blue-800 mb-2">💡 How to Track Income</h4>
+                                <p class="text-sm text-blue-700">
+                                    Add income by creating "Income" transactions for each member. This allows you to track:
+                                    <br>• Monthly salary payments • Freelance income • Investment returns • Any other income sources
+                                    <br>This gives you accurate month-by-month income tracking instead of fixed monthly amounts.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Members List -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                            <h2 class="text-xl font-bold mb-4">Household Members</h2>
+                            
+                            <div id="membersList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Members will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Household Tab -->
+                <div id="householdTab" class="tab-content hidden">
+                    <div class="space-y-8">
+                        <!-- Household Overview -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                                <i data-lucide="dollar-sign" class="text-green-500" size="24"></i>
+                                Household Financial Overview
+                            </h2>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                                <div class="text-center p-4 bg-green-50 rounded-lg">
+                                    <p class="text-sm text-gray-600">Combined Income</p>
+                                    <p id="householdIncome" class="text-2xl font-bold text-green-600">$0.00</p>
+                                </div>
+                                <div class="text-center p-4 bg-red-50 rounded-lg">
+                                    <p class="text-sm text-gray-600">Combined Expenses</p>
+                                    <p id="householdExpenses" class="text-2xl font-bold text-red-600">$0.00</p>
+                                </div>
+                                <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                    <p class="text-sm text-gray-600">Net Household Income</p>
+                                    <p id="householdNet" class="text-2xl font-bold text-green-600">$0.00</p>
+                                </div>
+                                <div class="text-center p-4 bg-purple-50 rounded-lg">
+                                    <p class="text-sm text-gray-600">Household Savings Goal</p>
+                                    <p id="householdSavingsGoal" class="text-2xl font-bold text-purple-600">$0.00</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Individual Member Contributions -->
+                            <h3 class="text-lg font-semibold mb-4">Member Contributions</h3>
+                            <div id="memberContributions" class="space-y-3">
+                                <!-- Member contributions will be populated here -->
+                            </div>
+                        </div>
+
+                        <!-- Placeholder for spacing -->
+                        <div class="mt-8"></div>
+
+                        <!-- Recent Household Transactions -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
+                            <h2 class="text-xl font-bold mb-4">Recent Household Transactions</h2>
+                            
+                            <div id="householdTransactionsList" class="space-y-3 max-h-96 overflow-y-auto custom-scroll">
+                                <p class="text-gray-500 text-center py-8">No transactions yet. Add some transactions to see them here.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Transaction Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 modal items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md glass-effect">
+            <h3 class="text-lg font-semibold mb-4">Edit Transaction</h3>
+            
+            <div class="space-y-4">
+                <input
+                    type="text"
+                    id="editTransactionDescription"
+                    placeholder="Description"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+                
+                <input
+                    type="number"
+                    id="editTransactionAmount"
+                    step="0.01"
+                    placeholder="Amount"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+                
+                <select id="editTransactionCategory" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                    <option value="Food and Dining">Food and Dining</option>
+                    <option value="Transportation">Transportation</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Housing">Housing</option>
+                    <option value="Savings and Investment">Savings and Investment</option>
+                </select>
+                
+                <div class="flex gap-4">
+                    <button onclick="updateTransaction()" class="flex-1 bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors btn-primary">
+                        Update
+                    </button>
+                    <button onclick="closeEditModal()" class="flex-1 bg-gray-300 text-gray-700 p-3 rounded-lg hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification System -->
+    <div id="notifications" class="fixed top-4 right-4 z-50 space-y-2">
+        <!-- Notifications will be added here dynamically -->
+    </div>
+
+    <script>
+        // Application State
+        let state = {
+            householdMembers: [
+                { id: 'm_1', name: 'You', savingsGoal: 800, color: 'bg-blue-500' }
+            ],
+            activeMember: 'm_1',
+            showCombinedHousehold: true,
+            transactions: [],
+            budgetCategories: [
+                { name: 'Food and Dining', budget: 500, spent: 0, color: 'bg-red-500', description: 'Restaurants, groceries, coffee' },
+                { name: 'Transportation', budget: 300, spent: 0, color: 'bg-blue-500', description: 'Gas, public transit, Uber' },
+                { name: 'Entertainment', budget: 200, spent: 0, color: 'bg-green-500', description: 'Movies, games, hobbies' },
+                { name: 'Utilities', budget: 150, spent: 0, color: 'bg-yellow-500', description: 'Electric, internet, phone' },
+                { name: 'Shopping', budget: 250, spent: 0, color: 'bg-purple-500', description: 'Clothing, electronics, misc' },
+                { name: 'Healthcare', budget: 100, spent: 0, color: 'bg-pink-500', description: 'Doctor visits, medications' },
+                { name: 'Housing', budget: 1200, spent: 0, color: 'bg-indigo-500', description: 'Rent, mortgage, maintenance' },
+                { name: 'Savings and Investment', budget: 600, spent: 0, color: 'bg-emerald-500', description: 'Emergency fund, retirement' }
+            ],
+            activeTab: 'overview',
+            editingTransaction: null
+        };
+
+        // Utility Functions
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(amount);
+        }
+
+        function formatCurrencyInput(input) {
+            // Remove all non-digit characters except decimal point
+            let value = input.value.replace(/[^\d.]/g, '');
+            
+            // Ensure only one decimal point
+            const parts = value.split('.');
+            if (parts.length > 2) value = parts[0] + '.' + parts.slice(1).join('');
+            
+            // Limit to 2 decimal places
+            if (parts[1]?.length > 2) {
+                value = parseFloat(value).toFixed(2);
+            }
+            
+            // Format with commas
+            if (value) {
+                const num = parseFloat(value);
+                if (!isNaN(num)) {
+                    input.value = num.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+            }
+        }
+
+        function showConfirmDialog(message, onConfirm) {
+            const dialog = document.createElement('div');
+            dialog.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            dialog.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+                    <h3 class="text-lg font-semibold mb-4 dark:text-white">${message}</h3>
+                    <div class="flex justify-end gap-4">
+                        <button class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" onclick="this.parentElement.parentElement.parentElement.remove()">Cancel</button>
+                        <button class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700" onclick="this.parentElement.parentElement.parentElement.remove(); (${onConfirm.toString()})()">Confirm</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(dialog);
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+            if (window.lucide && typeof window.lucide.replace === 'function') {
+                window.lucide.replace();
+            }
+        }
+
+        function getCurrentDate() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function generateId() {
+            return 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Persistence helpers
+        function saveState() {
+            try {
+                localStorage.setItem('pf_state_v1', JSON.stringify(state));
+            } catch (e) {
+                console.warn('saveState failed', e);
+            }
+        }
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem('pf_state_v1');
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (parsed.householdMembers && parsed.householdMembers.length > 0) state.householdMembers = parsed.householdMembers;
+                if (parsed.transactions) state.transactions = parsed.transactions;
+                if (parsed.budgetCategories && parsed.budgetCategories.length > 0) state.budgetCategories = parsed.budgetCategories;
+                if (typeof parsed.showCombinedHousehold === 'boolean') state.showCombinedHousehold = parsed.showCombinedHousehold;
+                if (parsed.activeMember) state.activeMember = parsed.activeMember;
+            } catch (e) {
+                console.warn('loadState failed', e);
+            }
+        }
+
+        // Notification System
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `${type === 'success' ? 'success-message' : 'error-message'} transition-all duration-300 transform translate-x-full`;
+            notification.textContent = message;
+            
+            const container = document.getElementById('notifications');
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (container.contains(notification)) {
+                        container.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Safe DOM operations
+        function safeSetInnerHTML(elementId, content) {
+            const element = document.getElementById(elementId);
+            if (element) element.innerHTML = content;
+        }
+
+        function safeSetTextContent(elementId, content) {
+            const element = document.getElementById(elementId);
+            if (element) element.textContent = content;
+        }
+
+        function safeSetValue(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (element) element.value = value;
+        }
+
+        function safeGetValue(elementId) {
+            const element = document.getElementById(elementId);
+            return element ? element.value : '';
+        }
+
+        // Tab Management
+        function setActiveTab(tabName, evt) {
+            try {
+                state.activeTab = tabName;
+
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.add('hidden');
+                });
+
+                const activeTabElement = document.getElementById(tabName + 'Tab');
+                if (activeTabElement) {
+                    activeTabElement.classList.remove('hidden');
+                }
+
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('border-b-2', 'border-blue-500', 'text-blue-600');
+                    btn.classList.add('text-gray-500');
+                });
+
+                if (evt && evt.currentTarget) {
+                    const target = evt.currentTarget;
+                    target.classList.add('border-b-2', 'border-blue-500', 'text-blue-600');
+                    target.classList.remove('text-gray-500');
+                } else {
+                    const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+                    if (btn) {
+                        btn.classList.add('border-b-2', 'border-blue-500', 'text-blue-600');
+                        btn.classList.remove('text-gray-500');
+                    }
+                }
+
+                const memberSelector = document.getElementById('memberSelector');
+                if (memberSelector) {
+                    if (tabName === 'household' || tabName === 'members') {
+                        memberSelector.style.display = 'none';
+                    } else {
+                        memberSelector.style.display = 'flex';
+                    }
+                }
+
+                updateDisplay();
+            } catch (error) {
+                console.error('Error in setActiveTab:', error);
+                showNotification('Error switching tabs', 'error');
+            }
+        }
+
+        // Transaction Management
+        function addTransaction() {
+            try {
+                const description = safeGetValue('transactionDescription');
+                const amount = parseFloat(safeGetValue('transactionAmount'));
+                const category = safeGetValue('transactionCategory');
+                const type = safeGetValue('transactionType');
+                const paymentMethod = safeGetValue('transactionPaymentMethod');
+                const date = safeGetValue('transactionDate') || getCurrentDate();
+                const tags = safeGetValue('transactionTags').split(',').map(tag => tag.trim()).filter(tag => tag);
+                const notes = safeGetValue('transactionNotes');
+                
+                if (!description || !amount || isNaN(amount)) {
+                    showNotification('Please fill in description and amount', 'error');
+                    return;
+                }
+                
+                const transaction = {
+                    id: generateId(),
+                    description,
+                    amount,
+                    category,
+                    type,
+                    paymentMethod,
+                    date,
+                    tags,
+                    notes,
+                    memberId: state.activeMember
+                };
+                
+                state.transactions.unshift(transaction);
+                clearTransactionForm();
+                saveState();
+                updateDisplay();
+                showNotification('Transaction added successfully!');
+            } catch (error) {
+                console.error('Error adding transaction:', error);
+                showNotification('Error adding transaction', 'error');
+            }
+        }
+
+        function addHouseholdTransaction() {
+            try {
+                const description = safeGetValue('householdTransactionDescription');
+                const amount = parseFloat(safeGetValue('householdTransactionAmount'));
+                const category = safeGetValue('householdTransactionCategory');
+                const memberId = safeGetValue('householdTransactionMember');
+                const type = safeGetValue('householdTransactionType');
+                const paymentMethod = safeGetValue('householdTransactionPaymentMethod');
+                const date = safeGetValue('householdTransactionDate') || getCurrentDate();
+                const tags = safeGetValue('householdTransactionTags').split(',').map(tag => tag.trim()).filter(tag => tag);
+                const notes = safeGetValue('householdTransactionNotes');
+                
+                if (!description || !amount || isNaN(amount)) {
+                    showNotification('Please fill in description and amount', 'error');
+                    return;
+                }
+                
+                const transaction = {
+                    id: generateId(),
+                    description,
+                    amount,
+                    category,
+                    type,
+                    paymentMethod,
+                    date,
+                    tags,
+                    notes,
+                    memberId: memberId || state.householdMembers[0].id
+                };
+                
+                state.transactions.unshift(transaction);
+                clearHouseholdTransactionForm();
+                saveState();
+                updateDisplay();
+                showNotification('Household transaction added successfully!');
+            } catch (error) {
+                console.error('Error adding household transaction:', error);
+                showNotification('Error adding household transaction', 'error');
+            }
+        }
+
+        function clearTransactionForm() {
+            safeSetValue('transactionDescription', '');
+            safeSetValue('transactionAmount', '');
+            safeSetValue('transactionCategory', 'Food and Dining');
+            safeSetValue('transactionType', 'expense');
+            safeSetValue('transactionPaymentMethod', 'credit_card');
+            safeSetValue('transactionDate', getCurrentDate());
+            safeSetValue('transactionTags', '');
+            safeSetValue('transactionNotes', '');
+        }
+
+        function clearHouseholdTransactionForm() {
+            safeSetValue('householdTransactionDescription', '');
+            safeSetValue('householdTransactionAmount', '');
+            safeSetValue('householdTransactionCategory', 'Food and Dining');
+            safeSetValue('householdTransactionType', 'expense');
+            safeSetValue('householdTransactionPaymentMethod', 'credit_card');
+            safeSetValue('householdTransactionDate', getCurrentDate());
+            safeSetValue('householdTransactionTags', '');
+            safeSetValue('householdTransactionNotes', '');
+        }
+
+        function editTransaction(id) {
+            try {
+                const transaction = state.transactions.find(t => t.id === id);
+                if (!transaction) return;
+                
+                state.editingTransaction = transaction;
+                safeSetValue('editTransactionDescription', transaction.description);
+                safeSetValue('editTransactionAmount', transaction.amount);
+                safeSetValue('editTransactionCategory', transaction.category);
+                
+                const modal = document.getElementById('editModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+            } catch (error) {
+                console.error('Error editing transaction:', error);
+                showNotification('Error opening edit form', 'error');
+            }
+        }
+
+        function updateTransaction() {
+            try {
+                if (!state.editingTransaction) return;
+                
+                const description = safeGetValue('editTransactionDescription');
+                const amount = parseFloat(safeGetValue('editTransactionAmount'));
+                const category = safeGetValue('editTransactionCategory');
+                
+                if (!description || !amount || isNaN(amount)) {
+                    showNotification('Please fill in description and amount', 'error');
+                    return;
+                }
+                
+                const transaction = state.transactions.find(t => t.id === state.editingTransaction.id);
+                if (transaction) {
+                    transaction.description = description;
+                    transaction.amount = amount;
+                    transaction.category = category;
+                }
+                
+                closeEditModal();
+                saveState();
+                updateDisplay();
+                showNotification('Transaction updated successfully!');
+            } catch (error) {
+                console.error('Error updating transaction:', error);
+                showNotification('Error updating transaction', 'error');
+            }
+        }
+
+        function deleteTransaction(id) {
+            try {
+                showConfirmDialog('Are you sure you want to delete this transaction?', () => {
+                    state.transactions = state.transactions.filter(t => t.id !== id);
+                    saveState();
+                    updateDisplay();
+                    showNotification('Transaction deleted successfully!');
+                });
+            } catch (error) {
+                console.error('Error deleting transaction:', error);
+                showNotification('Error deleting transaction', 'error');
+            }
+        }
+
+        function duplicateTransaction(id) {
+            try {
+                const original = state.transactions.find(t => t.id === id);
+                if (!original) return;
+                
+                const duplicate = {
+                    ...original,
+                    id: generateId(),
+                    date: getCurrentDate()
+                };
+                
+                state.transactions.unshift(duplicate);
+                saveState();
+                updateDisplay();
+                showNotification('Transaction duplicated successfully!');
+            } catch (error) {
+                console.error('Error duplicating transaction:', error);
+                showNotification('Error duplicating transaction', 'error');
+            }
+        }
+
+        function closeEditModal() {
+            state.editingTransaction = null;
+            const modal = document.getElementById('editModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // Member Management
+        function populateMemberSelector() {
+            const sel = document.getElementById('activeMemberSelect');
+            if (!sel) return;
+            sel.innerHTML = '';
+            
+            const allOpt = document.createElement('option');
+            allOpt.value = '__household__';
+            allOpt.textContent = 'Household (All)';
+            sel.appendChild(allOpt);
+            
+            state.householdMembers.forEach(m => {
+                const o = document.createElement('option');
+                o.value = m.id;
+                o.textContent = m.name || 'Member';
+                sel.appendChild(o);
+            });
+            
+            if (!state.activeMember || (state.activeMember !== '__household__' && !state.householdMembers.find(x => x.id === state.activeMember))) {
+                state.activeMember = state.householdMembers.length > 0 ? state.householdMembers[0].id : '__household__';
+            }
+            sel.value = state.activeMember;
+        }
+
+        function setActiveMemberFromSelect() {
+            const sel = document.getElementById('activeMemberSelect');
+            if (!sel) return;
+            state.activeMember = sel.value;
+            saveState();
+            updateDisplay();
+        }
+
+        function addMember() {
+            try {
+                const name = safeGetValue('newMemberName');
+                const savingsGoal = parseFloat(safeGetValue('newMemberSavings')) || 0;
+                
+                if (!name) {
+                    showNotification('Please enter a member name', 'error');
+                    return;
+                }
+                
+                const colors = ['bg-red-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-emerald-500', 'bg-orange-500'];
+                const member = {
+                    id: generateId(),
+                    name,
+                    savingsGoal,
+                    color: colors[state.householdMembers.length % colors.length]
+                };
+                
+                state.householdMembers.push(member);
+                state.activeMember = member.id;
+                
+                safeSetValue('newMemberName', '');
+                safeSetValue('newMemberSavings', '');
+                
+                populateMemberSelector();
+                updateDisplay();
+                saveState();
+                showNotification('Member added successfully! Add income transactions to track their earnings.');
+            } catch (error) {
+                console.error('Error adding member:', error);
+                showNotification('Error adding member', 'error');
+            }
+        }
+
+        function deleteMember(id) {
+            try {
+                if (state.householdMembers.length <= 1) {
+                    showNotification('You must have at least one household member', 'error');
+                    return;
+                }
+                
+                if (confirm('Are you sure you want to delete this member? This will also delete all their transactions.')) {
+                    state.transactions = state.transactions.filter(t => t.memberId !== id);
+                    state.householdMembers = state.householdMembers.filter(m => m.id !== id);
+                    
+                    if (state.activeMember === id) {
+                        state.activeMember = state.householdMembers.length > 0 ? state.householdMembers[0].id : '__household__';
+                    }
+                    
+                    populateMemberSelector();
+                    updateDisplay();
+                    saveState();
+                    showNotification('Member and their transactions deleted successfully!');
+                }
+            } catch (error) {
+                console.error('Error deleting member:', error);
+                showNotification('Error deleting member', 'error');
+            }
+        }
+
+        function updateMemberSavingsById(id, goal) {
+            try {
+                const member = state.householdMembers.find(m => m.id === id);
+                if (member) {
+                    member.savingsGoal = parseFloat(goal) || 0;
+                    saveState();
+                    updateDisplay();
+                }
+            } catch (error) {
+                console.error('Error updating member savings by ID:', error);
+            }
+        }
+
+        // Budget Management
+        function updateBudget(categoryName, newBudget) {
+            try {
+                const value = parseFloat(newBudget);
+                if (isNaN(value) || value < 0) {
+                    showNotification('Please enter a valid non-negative budget amount', 'error');
+                    return;
+                }
+                
+                const category = state.budgetCategories.find(cat => cat.name === categoryName);
+                if (category) {
+                    category.budget = value;
+                    saveState();
+                    updateDisplay();
+                    showNotification('Budget updated');
+                }
+            } catch (error) {
+                console.error('Error updating budget:', error);
+            }
+        }
+
+        // Filtering and Display
+        function filterTransactions() {
+            try {
+                const searchTerm = safeGetValue('searchInput').toLowerCase();
+                const categoryFilter = safeGetValue('categoryFilter');
+                const dateFilter = safeGetValue('dateFilter');
+                
+                const relevantTransactions = state.activeMember === '__household__' 
+                    ? state.transactions 
+                    : state.transactions.filter(t => t.memberId === state.activeMember);
+                
+                const filteredTransactions = relevantTransactions.filter(transaction => {
+                    const matchesSearch = transaction.description.toLowerCase().includes(searchTerm) ||
+                                        transaction.category.toLowerCase().includes(searchTerm);
+                    const matchesCategory = categoryFilter === 'all' || transaction.category === categoryFilter;
+                    
+                    let matchesDate = true;
+                    if (dateFilter !== 'all') {
+                        const transactionDate = new Date(transaction.date);
+                        const today = new Date();
+                        
+                        switch (dateFilter) {
+                            case 'week':
+                                matchesDate = (today - transactionDate) <= 7 * 24 * 60 * 60 * 1000;
+                                break;
+                            case 'month':
+                                matchesDate = transactionDate.getMonth() === today.getMonth() && 
+                                            transactionDate.getFullYear() === today.getFullYear();
+                                break;
+                            case '3months':
+                                matchesDate = (today - transactionDate) <= 90 * 24 * 60 * 60 * 1000;
+                                break;
+                        }
+                    }
+                    
+                    return matchesSearch && matchesCategory && matchesDate;
+                });
+                
+                displayTransactions(filteredTransactions);
+            } catch (error) {
+                console.error('Error filtering transactions:', error);
+            }
+        }
+
+        function displayTransactions(transactions) {
+            const container = document.getElementById('transactionsList');
+            const summary = document.getElementById('transactionsSummary');
+            
+            if (!container) return;
+            
+            if (transactions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No transactions found.</p>';
+                if (summary) {
+                    summary.innerHTML = '<span>Showing 0 of 0 transactions</span><span>Total: $0.00 income, $0.00 expenses</span>';
+                }
+                return;
+            }
+            
+            const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+            const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+            
+            container.innerHTML = transactions.map(transaction => {
+                const member = state.householdMembers.find(m => m.id === transaction.memberId);
+                const memberName = member ? member.name : 'Unknown';
+                
+                return `
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-semibold">${transaction.description}</h4>
+                                <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">${transaction.category}</span>
+                                ${state.activeMember === '__household__' ? `<span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">${memberName}</span>` : ''}
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                ${transaction.date} • ${transaction.paymentMethod.replace('_', ' ')}
+                                ${transaction.tags.length ? ' • ' + transaction.tags.join(', ') : ''}
+                            </div>
+                            ${transaction.notes ? `<div class="text-sm text-gray-600 mt-1">${transaction.notes}</div>` : ''}
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+                                ${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount)}
+                            </span>
+                            <button onclick="editTransaction('${transaction.id}')" class="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
+                            <button onclick="deleteTransaction('${transaction.id}')" class="text-red-600 hover:text-red-800 text-sm">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            if (summary) {
+                summary.innerHTML = `
+                    <span>Showing ${transactions.length} of ${state.transactions.length} transactions</span>
+                    <span>Total: ${formatCurrency(totalIncome)} income, ${formatCurrency(totalExpenses)} expenses</span>
+                `;
+            }
+        }
+
+        // Calculations
+        function calculateTotals() {
+            try {
+                const relevantTransactions = state.activeMember === '__household__' 
+                    ? state.transactions 
+                    : state.transactions.filter(t => t.memberId === state.activeMember);
+                
+                const currentMember = state.householdMembers.find(m => m.id === state.activeMember);
+                
+                const totalIncome = relevantTransactions
+                    .filter(t => t.type === 'income')
+                    .reduce((sum, t) => sum + t.amount, 0);
+                
+                const totalExpenses = relevantTransactions
+                    .filter(t => t.type === 'expense')
+                    .reduce((sum, t) => sum + t.amount, 0);
+                
+                const totalBudget = state.budgetCategories.reduce((sum, cat) => sum + cat.budget, 0);
+                const netIncome = totalIncome - totalExpenses;
+                const savingsRate = totalIncome > 0 ? ((netIncome / totalIncome) * 100) : 0;
+                
+                const totalHouseholdSavingsGoal = state.activeMember === '__household__' 
+                    ? state.householdMembers.reduce((sum, member) => sum + member.savingsGoal, 0)
+                    : (currentMember ? currentMember.savingsGoal : 0);
+                
+                const savingsGoalProgress = totalHouseholdSavingsGoal > 0 ? Math.min((netIncome / totalHouseholdSavingsGoal) * 100, 100) : 0;
+                
+                // Update category spending
+                const categorySpending = {};
+                relevantTransactions.filter(t => t.type === 'expense').forEach(t => {
+                    categorySpending[t.category] = (categorySpending[t.category] || 0) + t.amount;
+                });
+                
+                state.budgetCategories.forEach(cat => {
+                    cat.spent = categorySpending[cat.name] || 0;
+                });
+                
+                const totalSpent = state.budgetCategories.reduce((sum, cat) => sum + cat.spent, 0);
+                const remainingBudget = totalBudget - totalSpent;
+                
+                return {
+                    totalIncome,
+                    totalExpenses,
+                    totalBudget,
+                    totalSpent,
+                    remainingBudget,
+                    netIncome,
+                    savingsRate,
+                    savingsGoalProgress,
+                    totalHouseholdSavingsGoal,
+                    currentMember
+                };
+            } catch (error) {
+                console.error('Error calculating totals:', error);
+                return {
+                    totalIncome: 0,
+                    totalExpenses: 0,
+                    totalBudget: 0,
+                    totalSpent: 0,
+                    remainingBudget: 0,
+                    netIncome: 0,
+                    savingsRate: 0,
+                    savingsGoalProgress: 0,
+                    totalHouseholdSavingsGoal: 0,
+                    currentMember: state.householdMembers[0]
+                };
+            }
+        }
+
+        // Chart functions
+        function getChartData(months = 6) {
+            const monthlyData = {};
+            const today = new Date();
+            
+            // Initialize last 6 months
+            for (let i = months - 1; i >= 0; i--) {
+                const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                const monthKey = date.toLocaleString('default', { month: 'short' });
+                monthlyData[monthKey] = { income: 0, expenses: 0, savings: 0 };
+            }
+            
+            // Fill in data from transactions
+            const relevantTransactions = state.activeMember === '__household__' 
+                ? state.transactions 
+                : state.transactions.filter(t => t.memberId === state.activeMember);
+            
+            relevantTransactions.forEach(t => {
+                const date = new Date(t.date);
+                if (date >= new Date(today.getFullYear(), today.getMonth() - months + 1, 1)) {
+                    const monthKey = date.toLocaleString('default', { month: 'short' });
+                    if (monthlyData[monthKey]) {
+                        if (t.type === 'income') {
+                            monthlyData[monthKey].income += t.amount;
+                        } else {
+                            monthlyData[monthKey].expenses += t.amount;
+                        }
+                        monthlyData[monthKey].savings = monthlyData[monthKey].income - monthlyData[monthKey].expenses;
+                    }
+                }
+            });
+            
+            return monthlyData;
+        }
+
+        function getCategoryData() {
+            const categoryTotals = {};
+            const relevantTransactions = state.activeMember === '__household__' 
+                ? state.transactions 
+                : state.transactions.filter(t => t.memberId === state.activeMember);
+            
+            relevantTransactions
+                .filter(t => t.type === 'expense')
+                .forEach(t => {
+                    categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+                });
+            
+            return categoryTotals;
+        }
+
+        let charts = {};
+
+        function updateCharts() {
+            if (state.activeTab !== 'analytics') return;
+
+            const monthlyData = getChartData();
+            const months = Object.keys(monthlyData);
+            const darkMode = document.documentElement.classList.contains('dark');
+            const textColor = darkMode ? '#e5e7eb' : '#374151';
+
+            const chartDefaults = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: textColor
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: textColor }
+                    },
+                    y: {
+                        ticks: { color: textColor }
+                    }
+                }
+            };
+
+            // Monthly Trend Chart
+            const monthlyCtx = document.getElementById('monthlyTrendChart')?.getContext('2d');
+            if (monthlyCtx) {
+                if (charts.monthlyTrend) charts.monthlyTrend.destroy();
+                charts.monthlyTrend = new Chart(monthlyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: [
+                            {
+                                label: 'Income',
+                                data: months.map(m => monthlyData[m].income),
+                                borderColor: '#22c55e',
+                                backgroundColor: '#22c55e33',
+                                fill: true
+                            },
+                            {
+                                label: 'Expenses',
+                                data: months.map(m => monthlyData[m].expenses),
+                                borderColor: '#ef4444',
+                                backgroundColor: '#ef444433',
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: chartDefaults
+                });
+            }
+
+            // Income vs Expenses Pie Chart
+            const pieCtx = document.getElementById('incomeExpensesChart')?.getContext('2d');
+            if (pieCtx) {
+                const totalIncome = Object.values(monthlyData).reduce((sum, m) => sum + m.income, 0);
+                const totalExpenses = Object.values(monthlyData).reduce((sum, m) => sum + m.expenses, 0);
+                
+                if (charts.incomeExpenses) charts.incomeExpenses.destroy();
+                charts.incomeExpenses = new Chart(pieCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Income', 'Expenses'],
+                        datasets: [{
+                            data: [totalIncome, totalExpenses],
+                            backgroundColor: ['#22c55e', '#ef4444']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: textColor
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Category Breakdown Chart
+            const categoryCtx = document.getElementById('categoryChart')?.getContext('2d');
+            if (categoryCtx) {
+                const categoryData = getCategoryData();
+                const colors = [
+                    '#3b82f6', '#ef4444', '#22c55e', '#eab308', '#a855f7',
+                    '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#8b5cf6'
+                ];
+                
+                if (charts.category) charts.category.destroy();
+                charts.category = new Chart(categoryCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(categoryData),
+                        datasets: [{
+                            data: Object.values(categoryData),
+                            backgroundColor: colors.slice(0, Object.keys(categoryData).length)
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: textColor
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Savings Trend Chart
+            const savingsCtx = document.getElementById('savingsTrendChart')?.getContext('2d');
+            if (savingsCtx) {
+                if (charts.savings) charts.savings.destroy();
+                charts.savings = new Chart(savingsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'Monthly Savings',
+                            data: months.map(m => monthlyData[m].savings),
+                            backgroundColor: months.map(m => monthlyData[m].savings >= 0 ? '#22c55e' : '#ef4444')
+                        }]
+                    },
+                    options: chartDefaults
+                });
+            }
+        }
+
+        // Display Functions
+        function updateDisplay() {
+            try {
+                const totals = calculateTotals();
+                
+                safeSetTextContent('totalIncomeCard', formatCurrency(totals.totalIncome));
+                safeSetTextContent('totalExpensesCard', formatCurrency(totals.totalExpenses));
+                safeSetTextContent('expensePercentage', totals.totalIncome > 0 ? 
+                    `${((totals.totalExpenses / totals.totalIncome) * 100).toFixed(1)}% of income` : '0% of income');
+                
+                const netIncomeCard = document.getElementById('netIncomeCard');
+                if (netIncomeCard) {
+                    netIncomeCard.textContent = formatCurrency(totals.netIncome);
+                    netIncomeCard.className = `text-2xl font-bold ${totals.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`;
+                }
+                
+                safeSetTextContent('savingsRateCard', `${totals.savingsRate.toFixed(1)}%`);
+                safeSetTextContent('savingsGoalProgressCard', `${totals.savingsGoalProgress.toFixed(0)}%`);
+                safeSetTextContent('savingsGoalTarget', totals.totalHouseholdSavingsGoal > 0 ? formatCurrency(totals.totalHouseholdSavingsGoal) : '$0 target');
+
+                safeSetTextContent('totalBudgetSummary', formatCurrency(totals.totalBudget));
+                safeSetTextContent('totalSpentSummary', formatCurrency(totals.totalSpent));
+                safeSetTextContent('totalRemainingSummary', formatCurrency(totals.remainingBudget));
+
+                renderBudgetCategories();
+                renderPaymentMethods();
+                updateCharts();
+                renderHealthRecommendations(totals);
+                renderMembers();
+                renderHouseholdControls();
+
+                filterTransactions();
+                populateMemberSelector();
+
+                if (window.lucide && typeof window.lucide.replace === 'function') {
+                    try { window.lucide.replace(); } catch (e) { /* ignore */ }
+                }
+            } catch (error) {
+                console.error('Error in updateDisplay:', error);
+            }
+        }
+
+        // Render functions
+        function renderBudgetCategories() {
+            const container = document.getElementById('budgetCategories');
+            if (!container) return;
+            container.innerHTML = '';
+
+            state.budgetCategories.forEach((cat, idx) => {
+                const el = document.createElement('div');
+                el.className = 'bg-white p-4 rounded-lg shadow-sm flex flex-col gap-3';
+
+                const progress = cat.budget > 0 ? Math.min((cat.spent / cat.budget) * 100, 100) : 0;
+                const isOverBudget = cat.spent > cat.budget;
+
+                el.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="font-semibold">${cat.name}</div>
+                            <div class="text-xs text-gray-500">${cat.description || ''}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold">${formatCurrency(cat.budget)}</div>
+                            <div class="text-xs ${isOverBudget ? 'text-red-500' : 'text-gray-500'}">${formatCurrency(cat.spent)} spent</div>
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="h-2 rounded-full ${isOverBudget ? 'bg-red-500' : 'bg-blue-500'}" style="width: ${Math.min(progress, 100)}%"></div>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <input type="number" min="0" step="1" value="${cat.budget}" 
+                               class="p-2 border rounded w-40 text-right" 
+                               onkeydown="if(event.key === 'Enter') updateBudget('${cat.name}', this.value)">
+                        <button onclick="updateBudget('${cat.name}', this.previousElementSibling.value)" 
+                                class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 btn-primary">Save</button>
+                    </div>
+                `;
+
+                container.appendChild(el);
+            });
+        }
+
+        function renderMembers() {
+            const container = document.getElementById('membersList');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (!state.householdMembers || state.householdMembers.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 col-span-full text-center">No household members yet. Add one above!</p>';
+                return;
+            }
+
+            state.householdMembers.forEach(member => {
+                const card = document.createElement('div');
+                card.className = 'p-4 bg-white rounded-lg shadow-sm flex flex-col gap-4';
+
+                const memberTransactions = state.transactions.filter(t => t.memberId === member.id);
+                const memberIncome = memberTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+                const memberExpenses = memberTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="font-semibold text-lg">${member.name}</div>
+                        <button onclick="deleteMember('${member.id}')" class="px-3 py-1 text-sm text-white bg-red-600 hover:bg-red-700 rounded transition-colors btn-danger">
+                            Remove
+                        </button>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm text-gray-600">Total Income (from transactions):</label>
+                            <span class="font-semibold text-green-600">${formatCurrency(memberIncome)}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm text-gray-600">Total Expenses:</label>
+                            <span class="font-semibold text-red-600">${formatCurrency(memberExpenses)}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm text-gray-600">Savings Goal:</label>
+                            <input type="number" value="${member.savingsGoal}" 
+                                   onchange="updateMemberSavingsById('${member.id}', this.value)" 
+                                   class="w-28 p-1 border rounded text-right">
+                        </div>
+                        <div class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                            Add income transactions in the Overview or Household tabs to track ${member.name}'s earnings
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            const householdSelect = document.getElementById('householdTransactionMember');
+            if (householdSelect) {
+                householdSelect.innerHTML = '';
+                state.householdMembers.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = m.name;
+                    householdSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function renderPaymentMethods() {
+            const container = document.getElementById('paymentMethods');
+            if (!container) return;
+
+            const relevantTransactions = state.activeMember === '__household__' 
+                ? state.transactions 
+                : state.transactions.filter(t => t.memberId === state.activeMember);
+
+            const expenses = relevantTransactions.filter(t => t.type === 'expense');
+            if (expenses.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">No payment data yet</p>';
+                return;
+            }
+
+            const paymentMethods = {};
+            expenses.forEach(t => {
+                const method = t.paymentMethod.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                paymentMethods[method] = (paymentMethods[method] || 0) + t.amount;
+            });
+
+            const total = Object.values(paymentMethods).reduce((sum, amount) => sum + amount, 0);
+
+            container.innerHTML = Object.entries(paymentMethods)
+                .sort(([,a], [,b]) => b - a)
+                .map(([method, amount]) => {
+                    const percentage = total > 0 ? ((amount / total) * 100).toFixed(1) : 0;
+                    return `
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">${method}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-semibold">${formatCurrency(amount)}</span>
+                                <span class="text-xs text-gray-500">(${percentage}%)</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+        }
+
+        function renderMonthlyTrend() {
+            const container = document.getElementById('monthlyTrend');
+            if (!container) return;
+
+            const relevantTransactions = state.activeMember === '__household__' 
+                ? state.transactions 
+                : state.transactions.filter(t => t.memberId === state.activeMember);
+
+            if (relevantTransactions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No transaction data available yet.</p>';
+                return;
+            }
+
+            const monthlyData = {};
+            relevantTransactions.forEach(t => {
+                const date = new Date(t.date);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = { income: 0, expenses: 0 };
+                }
+                
+                if (t.type === 'income') {
+                    monthlyData[monthKey].income += t.amount;
+                } else {
+                    monthlyData[monthKey].expenses += t.amount;
+                }
+            });
+
+            const sortedMonths = Object.keys(monthlyData).sort().slice(-6);
+            
+            container.innerHTML = sortedMonths.map(month => {
+                const data = monthlyData[month];
+                const net = data.income - data.expenses;
+                const date = new Date(month + '-01');
+                const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                
+                return `
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+                        <span class="font-medium">${monthName}</span>
+                        <div class="flex gap-4 text-sm">
+                            <span class="text-green-600">+${formatCurrency(data.income)}</span>
+                            <span class="text-red-600">-${formatCurrency(data.expenses)}</span>
+                            <span class="font-semibold ${net >= 0 ? 'text-green-600' : 'text-red-600'}">
+                                ${net >= 0 ? '+' : ''}${formatCurrency(net)}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderCategoryBreakdown() {
+            const container = document.getElementById('categoryBreakdown');
+            if (!container) return;
+
+            const relevantTransactions = state.activeMember === '__household__' 
+                ? state.transactions 
+                : state.transactions.filter(t => t.memberId === state.activeMember);
+
+            const expenses = relevantTransactions.filter(t => t.type === 'expense');
+            if (expenses.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No spending data available yet.</p>';
+                return;
+            }
+
+            const categorySpending = {};
+            expenses.forEach(t => {
+                categorySpending[t.category] = (categorySpending[t.category] || 0) + t.amount;
+            });
+
+            const total = Object.values(categorySpending).reduce((sum, amount) => sum + amount, 0);
+
+            container.innerHTML = Object.entries(categorySpending)
+                .sort(([,a], [,b]) => b - a)
+                .map(([category, amount]) => {
+                    const percentage = total > 0 ? ((amount / total) * 100).toFixed(1) : 0;
+                    const budgetCat = state.budgetCategories.find(c => c.name === category);
+                    const isOverBudget = budgetCat && amount > budgetCat.budget;
+                    
+                    return `
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+                            <span class="font-medium">${category}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-semibold ${isOverBudget ? 'text-red-600' : 'text-gray-800'}">${formatCurrency(amount)}</span>
+                                <span class="text-sm text-gray-500">(${percentage}%)</span>
+                                ${budgetCat ? `<span class="text-xs text-gray-400">/ ${formatCurrency(budgetCat.budget)}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+        }
+
+        function renderHealthRecommendations(totals) {
+            const container = document.getElementById('healthRecommendations');
+            if (!container) return;
+
+            const recommendations = [];
+
+            safeSetTextContent('healthSavingsRate', `${totals.savingsRate.toFixed(1)}%`);
+            safeSetTextContent('healthExpenseRatio', `${totals.totalIncome > 0 ? ((totals.totalExpenses / totals.totalIncome) * 100).toFixed(1) : 0}%`);
+
+            const overBudgetCategories = state.budgetCategories.filter(cat => cat.spent > cat.budget);
+            const budgetAdherence = overBudgetCategories.length === 0 ? 'On Track' : `${overBudgetCategories.length} Over Budget`;
+            safeSetTextContent('healthBudgetAdherence', budgetAdherence);
+
+            if (totals.savingsRate < 10) {
+                recommendations.push('Consider increasing your savings rate to at least 10-20% of income.');
+            }
+            
+            if (overBudgetCategories.length > 0) {
+                recommendations.push(`Review spending in: ${overBudgetCategories.map(c => c.name).join(', ')}.`);
+            }
+            
+            if (totals.totalExpenses > totals.totalIncome * 0.8) {
+                recommendations.push('Your expenses are high relative to income. Look for areas to cut back.');
+            }
+            
+            if (recommendations.length === 0) {
+                recommendations.push('Great job! Your finances look healthy. Keep up the good work.');
+            }
+
+            container.innerHTML = recommendations.map(rec => `<li>${rec}</li>`).join('');
+        }
+
+        function renderHouseholdControls() {
+            if (state.activeTab !== 'household') return;
+
+            // Calculate household totals by summing up all transactions
+            const householdIncome = state.transactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const householdExpenses = state.transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const householdNet = householdIncome - householdExpenses;
+            const totalHouseholdSavingsGoal = state.householdMembers
+                .reduce((sum, member) => sum + member.savingsGoal, 0);
+            
+            safeSetTextContent('householdIncome', formatCurrency(householdIncome));
+            safeSetTextContent('householdExpenses', formatCurrency(householdExpenses));
+            safeSetTextContent('householdNet', formatCurrency(householdNet));
+            safeSetTextContent('householdSavingsGoal', formatCurrency(totalHouseholdSavingsGoal));
+
+            const container = document.getElementById('memberContributions');
+            if (!container) return;
+
+            container.innerHTML = state.householdMembers.map(member => {
+                const memberTransactions = state.transactions.filter(t => t.memberId === member.id);
+                const memberIncome = memberTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+                const memberExpenses = memberTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+                const memberNet = memberIncome - memberExpenses;
+                
+                return `
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+                        <span class="font-medium">${member.name}</span>
+                        <div class="flex gap-4 text-sm">
+                            <span class="text-green-600">+${formatCurrency(memberIncome)}</span>
+                            <span class="text-red-600">-${formatCurrency(memberExpenses)}</span>
+                            <span class="font-semibold ${memberNet >= 0 ? 'text-green-600' : 'text-red-600'}">
+                                ${memberNet >= 0 ? '+' : ''}${formatCurrency(memberNet)}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            displayHouseholdTransactions();
+        }
+
+        function displayHouseholdTransactions() {
+            const container = document.getElementById('householdTransactionsList');
+            if (!container) return;
+
+            const recentTransactions = state.transactions.slice(0, 10);
+
+            if (recentTransactions.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No transactions yet. Add some transactions to see them here.</p>';
+                return;
+            }
+
+            container.innerHTML = recentTransactions.map(transaction => {
+                const member = state.householdMembers.find(m => m.id === transaction.memberId);
+                const memberName = member ? member.name : 'Unknown';
+                
+                return `
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-semibold">${transaction.description}</h4>
+                                <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">${transaction.category}</span>
+                                <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">${memberName}</span>
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                ${transaction.date} • ${transaction.paymentMethod.replace('_', ' ')}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+                                ${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount)}
+                            </span>
+                            <button onclick="editTransaction('${transaction.id}')" class="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
+                            <button onclick="deleteTransaction('${transaction.id}')" class="text-red-600 hover:text-red-800 text-sm">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Export and Reset functionality
+        function exportToCSV() {
+            try {
+                const csvContent = [
+                    ['Date', 'Description', 'Amount', 'Type', 'Category', 'Payment Method', 'Member', 'Tags', 'Notes'],
+                    ...state.transactions.map(t => {
+                        const member = state.householdMembers.find(m => m.id === t.memberId);
+                        return [
+                            t.date,
+                            t.description,
+                            t.amount,
+                            t.type,
+                            t.type === 'income' ? 'Income' : t.category,
+                            t.paymentMethod,
+                            member ? member.name : 'Unknown',
+                            t.tags.join(', '),
+                            t.notes || ''
+                        ];
+                    })
+                ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `finance-tracker-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showNotification('Data exported successfully!');
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                showNotification('Error exporting data', 'error');
+            }
+        }
+
+        function resetApplication() {
+            const confirmed = confirm(
+                'Are you sure you want to reset everything?\n\n' +
+                'This will permanently delete:\n' +
+                '• All transactions\n' +
+                '• All household members (except "You")\n' +
+                '• All budget customizations\n' +
+                '• All saved settings\n\n' +
+                'This action cannot be undone!'
+            );
+
+            if (confirmed) {
+                try {
+                    state = {
+                        householdMembers: [
+                            { id: 'm_1', name: 'You', savingsGoal: 800, color: 'bg-blue-500' }
+                        ],
+                        activeMember: 'm_1',
+                        showCombinedHousehold: true,
+                        transactions: [],
+                        budgetCategories: [
+                            { name: 'Food and Dining', budget: 500, spent: 0, color: 'bg-red-500', description: 'Restaurants, groceries, coffee' },
+                            { name: 'Transportation', budget: 300, spent: 0, color: 'bg-blue-500', description: 'Gas, public transit, Uber' },
+                            { name: 'Entertainment', budget: 200, spent: 0, color: 'bg-green-500', description: 'Movies, games, hobbies' },
+                            { name: 'Utilities', budget: 150, spent: 0, color: 'bg-yellow-500', description: 'Electric, internet, phone' },
+                            { name: 'Shopping', budget: 250, spent: 0, color: 'bg-purple-500', description: 'Clothing, electronics, misc' },
+                            { name: 'Healthcare', budget: 100, spent: 0, color: 'bg-pink-500', description: 'Doctor visits, medications' },
+                            { name: 'Housing', budget: 1200, spent: 0, color: 'bg-indigo-500', description: 'Rent, mortgage, maintenance' },
+                            { name: 'Savings and Investment', budget: 600, spent: 0, color: 'bg-emerald-500', description: 'Emergency fund, retirement' }
+                        ],
+                        activeTab: 'overview',
+                        editingTransaction: null
+                    };
+
+                    localStorage.removeItem('pf_state_v1');
+                    clearTransactionForm();
+                    clearHouseholdTransactionForm();
+                    populateMemberSelector();
+                    updateDisplay();
+                    setActiveTab('overview');
+
+                    showNotification('Application reset successfully!');
+                } catch (error) {
+                    console.error('Error resetting application:', error);
+                    showNotification('Error resetting application', 'error');
+                }
+            }
+        }
+
+        // Initialize app when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                loadState();
+
+                const sel = document.getElementById('activeMemberSelect');
+                if (sel) sel.addEventListener('change', setActiveMemberFromSelect);
+
+                safeSetValue('transactionDate', getCurrentDate());
+                safeSetValue('householdTransactionDate', getCurrentDate());
+
+                populateMemberSelector();
+                updateDisplay();
+                setActiveTab(state.activeTab || 'overview');
+
+                showNotification('Finance tracker loaded successfully!');
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                showNotification('Error loading application', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
