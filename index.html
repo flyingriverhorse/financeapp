@@ -327,7 +327,7 @@
                                 />
                                 
                                 <select id="transactionCategory" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                                    <option value="Food and Dining">Food and Dining</option>
+                                    <option value="MArket">Market</option>
                                     <option value="Transportation">Transportation</option>
                                     <option value="Entertainment">Entertainment</option>
                                     <option value="Utilities">Utilities</option>
@@ -416,7 +416,7 @@
                             
                             <select id="categoryFilter" onchange="filterTransactions()" class="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                                 <option value="all">All Categories</option>
-                                <option value="Food and Dining">Food and Dining</option>
+                                <option value="Market">Market</option>
                                 <option value="Transportation">Transportation</option>
                                 <option value="Entertainment">Entertainment</option>
                                 <option value="Utilities">Utilities</option>
@@ -685,7 +685,7 @@
                 />
                 
                 <select id="editTransactionCategory" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-                    <option value="Food and Dining">Food and Dining</option>
+                    <option value="Market">Market</option>
                     <option value="Transportation">Transportation</option>
                     <option value="Entertainment">Entertainment</option>
                     <option value="Utilities">Utilities</option>
@@ -722,7 +722,7 @@
             showCombinedHousehold: true,
             transactions: [],
             budgetCategories: [
-                { name: 'Food and Dining', budget: 500, spent: 0, color: 'bg-red-500', description: 'Restaurants, groceries, coffee' },
+                { name: 'Market', budget: 500, spent: 0, color: 'bg-red-500', description: 'Restaurants, groceries, coffee' },
                 { name: 'Transportation', budget: 300, spent: 0, color: 'bg-blue-500', description: 'Gas, public transit, Uber' },
                 { name: 'Entertainment', budget: 200, spent: 0, color: 'bg-green-500', description: 'Movies, games, hobbies' },
                 { name: 'Utilities', budget: 150, spent: 0, color: 'bg-yellow-500', description: 'Electric, internet, phone' },
@@ -999,7 +999,7 @@
         function clearTransactionForm() {
             safeSetValue('transactionDescription', '');
             safeSetValue('transactionAmount', '');
-            safeSetValue('transactionCategory', 'Food and Dining');
+            safeSetValue('transactionCategory', 'Market');
             safeSetValue('transactionType', 'expense');
             safeSetValue('transactionPaymentMethod', 'credit_card');
             safeSetValue('transactionDate', getCurrentDate());
@@ -1010,7 +1010,7 @@
         function clearHouseholdTransactionForm() {
             safeSetValue('householdTransactionDescription', '');
             safeSetValue('householdTransactionAmount', '');
-            safeSetValue('householdTransactionCategory', 'Food and Dining');
+            safeSetValue('householdTransactionCategory', 'Market');
             safeSetValue('householdTransactionType', 'expense');
             safeSetValue('householdTransactionPaymentMethod', 'credit_card');
             safeSetValue('householdTransactionDate', getCurrentDate());
@@ -2050,7 +2050,7 @@
                         showCombinedHousehold: true,
                         transactions: [],
                         budgetCategories: [
-                            { name: 'Food and Dining', budget: 500, spent: 0, color: 'bg-red-500', description: 'Restaurants, groceries, coffee' },
+                            { name: 'Market', budget: 500, spent: 0, color: 'bg-red-500', description: 'Restaurants, groceries, coffee' },
                             { name: 'Transportation', budget: 300, spent: 0, color: 'bg-blue-500', description: 'Gas, public transit, Uber' },
                             { name: 'Entertainment', budget: 200, spent: 0, color: 'bg-green-500', description: 'Movies, games, hobbies' },
                             { name: 'Utilities', budget: 150, spent: 0, color: 'bg-yellow-500', description: 'Electric, internet, phone' },
@@ -2101,4 +2101,5 @@
         });
     </script>
 </body>
+
 </html>
